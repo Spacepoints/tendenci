@@ -228,7 +228,7 @@ class MembershipTypeForm(forms.ModelForm):
                   'renewal_period_start',
                   'renewal_period_end',
                   'expiration_grace_period',
-                  'order',
+                  'position',
                   'status',
                   'status_detail',
                   )

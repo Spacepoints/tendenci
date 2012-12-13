@@ -766,7 +766,7 @@ class Reg8nConfPricingForm(BetterModelForm):
             'allow_anonymous',
             'allow_user',
             'allow_member',
-            'display_order'
+            'position'
          ]
 
         fieldsets = [('Registration Pricing', {
@@ -779,7 +779,7 @@ class Reg8nConfPricingForm(BetterModelForm):
                     'allow_anonymous',
                     'allow_user',
                     'allow_member',
-                    'display_order'
+                    'position'
                     ],
           'legend': '',
           'classes': ['boxy-grey'],

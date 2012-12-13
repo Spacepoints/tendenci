@@ -58,7 +58,7 @@ class PhotoUploadForm(TendenciBaseForm):
     
     class Meta:
         model = Image
-        exclude = ('member', 'photoset', 'title_slug', 'effect', 'crop_from', 'group', 'photoset_position')
+        exclude = ('member', 'photoset', 'title_slug', 'effect', 'crop_from', 'group', 'position')
 
     def __init__(self, *args, **kwargs):
         super(PhotoUploadForm, self).__init__(*args, **kwargs)

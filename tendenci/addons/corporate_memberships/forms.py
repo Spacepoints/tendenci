@@ -65,7 +65,7 @@ class CorporateMembershipTypeForm(forms.ModelForm):
                   'individual_threshold',
                   'individual_threshold_price',
                   'admin_only',
-                  'order',
+                  'position',
                   'status',
                   'status_detail',
                   )
@@ -157,7 +157,7 @@ class CorpFieldForm(forms.ModelForm):
                   'default_value',
                   'admin_only',
                   'css_class',
-                  'order'
+                  'position'
                   )
 
     def __init__(self, *args, **kwargs):

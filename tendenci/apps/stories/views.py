@@ -232,7 +232,7 @@ def export(request, template_name="stories/export.html"):
             'start_dt',
             'end_dt',
             'expires',
-            'ncsortorder',
+            'position',
             'entity',
             'tags',
             'categories',
