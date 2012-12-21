@@ -61,6 +61,7 @@ class Story(OrderingBaseModel, TendenciBaseModel):
     class Meta:
         permissions = (("view_story", "Can view story"),)
         verbose_name_plural = "stories"
+        ordering = ['position']
 
     def __unicode__(self):
         return self.title
