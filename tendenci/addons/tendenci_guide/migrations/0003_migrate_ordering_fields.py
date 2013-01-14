@@ -1,27 +1,23 @@
 # encoding: utf-8
 import datetime
 from south.db import db
-from south.v2 import SchemaMigration
+from south.v2 import DataMigration
 from django.db import models
 
-class Migration(SchemaMigration):
+class Migration(DataMigration):
 
     def forwards(self, orm):
-        
-        # Deleting field 'Guide.ordering'
-        db.delete_column('tendenci_guide_guide', 'ordering')
-
-        # Adding field 'Guide.position'
-        db.add_column('tendenci_guide_guide', 'position', self.gf('django.db.models.fields.IntegerField')(default=0, null=True, blank=True), keep_default=False)
+        # Migrate data from previous ordering field
+        for guide in orm.Guide.objects.all():
+            guide.position = guide.ordering
+            guide.save()
 
 
     def backwards(self, orm):
-        
-        # Adding field 'Guide.ordering'
-        db.add_column('tendenci_guide_guide', 'ordering', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True), keep_default=False)
-
-        # Deleting field 'Guide.position'
-        db.delete_column('tendenci_guide_guide', 'position')
+        # Migrate data from previous ordering field
+        for guide in orm.Guide.objects.all():
+            guide.ordering = guide.position
+            guide.save()
 
 
     models = {
@@ -29,6 +25,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Guide'},
             'content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'ordering': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'position': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
             'section': ('django.db.models.fields.CharField', [], {'default': "'misc'", 'max_length': '50'}),
             'slug': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),

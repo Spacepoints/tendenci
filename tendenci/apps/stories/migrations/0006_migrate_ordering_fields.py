@@ -1,27 +1,23 @@
 # encoding: utf-8
 import datetime
 from south.db import db
-from south.v2 import SchemaMigration
+from south.v2 import DataMigration
 from django.db import models
 
-class Migration(SchemaMigration):
+class Migration(DataMigration):
 
     def forwards(self, orm):
-        
-        # Deleting field 'Story.ncsortorder'
-        db.delete_column('stories_story', 'ncsortorder')
-
-        # Adding field 'Story.position'
-        db.add_column('stories_story', 'position', self.gf('django.db.models.fields.IntegerField')(default=0, null=True, blank=True), keep_default=False)
+        # Migrate data from previous ordering field
+        for story in orm.Story.objects.all():
+            story.position = story.ncsortorder
+            story.save()
 
 
     def backwards(self, orm):
-        
-        # Adding field 'Story.ncsortorder'
-        db.add_column('stories_story', 'ncsortorder', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True), keep_default=False)
-
-        # Deleting field 'Story.position'
-        db.delete_column('stories_story', 'position')
+        # Migrate data from previous ordering field
+        for story in orm.Story.objects.all():
+            story.ncsortorder = story.position
+            story.save()
 
 
     models = {
@@ -40,7 +36,7 @@ class Migration(SchemaMigration):
         },
         'auth.user': {
             'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2012, 12, 13, 7, 50, 42, 72972)'}),
+            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 1, 14, 15, 41, 6, 750867)'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -48,7 +44,7 @@ class Migration(SchemaMigration):
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2012, 12, 13, 7, 50, 42, 72870)'}),
+            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 1, 14, 15, 41, 6, 750754)'}),
             'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
             'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -142,7 +138,7 @@ class Migration(SchemaMigration):
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True'})
         },
         'stories.story': {
-            'Meta': {'object_name': 'Story'},
+            'Meta': {'ordering': "['position']", 'object_name': 'Story'},
             'allow_anonymous_view': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'allow_member_edit': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'allow_member_view': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
@@ -161,6 +157,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'image': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'to': "orm['stories.StoryPhoto']", 'null': 'True'}),
             'link_title': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
+            'ncsortorder': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'owner': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'related_name': "'stories_story_owner'", 'null': 'True', 'to': "orm['auth.User']"}),
             'owner_username': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'position': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
