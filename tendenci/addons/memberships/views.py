@@ -50,9 +50,12 @@ from tendenci.apps.profiles.models import Profile
 from tendenci.addons.memberships.models import (App, AppEntry, Membership,
     MembershipType, Notice, MembershipImport, MembershipDefault,
     MembershipImportData, MembershipApp)
-from tendenci.addons.memberships.forms import (AppCorpPreForm, MembershipForm, MembershipDefaultForm,
+from tendenci.addons.memberships.forms import (
+    AppCorpPreForm, MembershipForm, MembershipDefaultForm,
     MemberApproveForm, ReportForm, EntryEditForm, ExportForm,
-    AppEntryForm, MembershipDefaultUploadForm, UserForm, ProfileForm, MembershipDefault2Form)
+    AppEntryForm, MembershipDefaultUploadForm, UserForm, ProfileForm,
+    DemographicsForm,
+    MembershipDefault2Form)
 from tendenci.addons.memberships.utils import (is_import_valid, prepare_chart_data,
     get_days, get_over_time_stats, get_status_filter,
     get_membership_stats, NoMembershipTypes, ImportMembDefault)
@@ -1260,6 +1263,7 @@ def membership_default_preview(request, app_id,
 
     user_form = UserForm(app_fields)
     profile_form = ProfileForm(app_fields)
+    demographics_form = DemographicsForm(app_fields)
     membership_form = MembershipDefault2Form(app_fields,
                                              request_user=request.user,
                                              membership_app=app)
@@ -1269,6 +1273,7 @@ def membership_default_preview(request, app_id,
                "app_fields": app_fields,
                'user_form': user_form,
                'profile_form': profile_form,
+               'demographics_form': demographics_form,
                'membership_form': membership_form}
     return render_to_response(template, context, RequestContext(request))
 
@@ -1346,6 +1351,7 @@ def membership_default_add(request,
 
     user_form = UserForm(app_fields, request.POST or None)
     profile_form = ProfileForm(app_fields, request.POST or None)
+
     params = {'request_user': request.user,
               'membership_app': app,
               'join_under_corporate': join_under_corporate,
@@ -1353,6 +1359,7 @@ def membership_default_add(request,
               }
     if join_under_corporate:
         params['authentication_method'] = authentication_method
+    demographics_form = DemographicsForm(app_fields, request.POST or None)
     membership_form = MembershipDefault2Form(app_fields,
         request.POST or None, **params)
     captcha_form = CaptchaForm(request.POST or None)
@@ -1365,6 +1372,7 @@ def membership_default_add(request,
         good = (
             user_form.is_valid(),
             profile_form.is_valid(),
+            demographics_form.is_valid(),
             membership_form.is_valid(),
             captcha_form.is_valid()
         )
@@ -1378,6 +1386,10 @@ def membership_default_add(request,
             profile_form.save(
                 request_user=request.user
             )
+            # save demographics
+            demographics = demographics_form.save(commit=False)
+            demographics.user = user
+            demographics.save()
 
             membership = membership_form.save(
                 request=request,
@@ -1410,6 +1422,7 @@ def membership_default_add(request,
         'app_fields': app_fields,
         'user_form': user_form,
         'profile_form': profile_form,
+        'demographics_form': demographics_form,
         'membership_form': membership_form,
         'captcha_form': captcha_form
     }
@@ -1643,9 +1656,9 @@ def membership_join_report_pdf(request):
 def report_list(request, template_name='reports/membership_report_list.html'):
     """ List of all available membership reports.
     """
-    
+
     EventLog.objects.log()
-    
+
     return render_to_response(template_name, context_instance=RequestContext(request))
 
 @staff_member_required
@@ -1940,7 +1953,7 @@ def report_member_roster(request, template_name='reports/membership_roster.html'
     """ Shows membership roster. Extends base-print for easy printing.
     """
     members = MembershipDefault.objects.filter(status=1, status_detail="active").order_by('user__last_name')
-    
+
     EventLog.objects.log()
 
     return render_to_response(template_name, {'members': members}, context_instance=RequestContext(request))
@@ -1950,7 +1963,7 @@ def report_member_quick_list(request, template_name='reports/membership_quick_li
     """ Table view of current members fname, lname and company only.
     """
     members = MembershipDefault.objects.filter(status=1, status_detail="active").order_by('user__last_name')
-    
+
     # returns csv response ---------------
     ouput = request.GET.get('output', '')
     if ouput == 'csv':
@@ -1987,13 +2000,13 @@ def report_members_by_company(request, template_name='reports/members_by_company
     """
     active_mems = MembershipDefault.objects.filter(status=1, status_detail="active")
     company_list = []
-    
+
     # get list of distinct companies
     for member in active_mems:
         if member.user.profile.company:
             if member.user.profile.company not in company_list:
                 company_list.append(member.user.profile.company)
-    
+
     # get total number of active members for each company
     companies = []
     for company in company_list:
@@ -2003,9 +2016,9 @@ def report_members_by_company(request, template_name='reports/members_by_company
             'total_members': total_members
         }
         companies.append(company_dict)
-    
+
     companies = sorted(companies, key=lambda k: k['total_members'], reverse=True)
-    
+
     EventLog.objects.log()
 
     return render_to_response(template_name, {'companies': companies}, context_instance=RequestContext(request))
@@ -2020,11 +2033,11 @@ def report_renewed_members(request, template_name='reports/renewed_members.html'
         days = 30
     compare_dt = datetime.now() - timedelta(days=days)
     members = MembershipDefault.objects.filter(renewal=1, renew_dt__gte=compare_dt).order_by('renew_dt')
-    
+
     # returns csv response ---------------
     ouput = request.GET.get('output', '')
     if ouput == 'csv':
-    
+
         table_header = [
             'member number',
             'last name',
@@ -2035,10 +2048,10 @@ def report_renewed_members(request, template_name='reports/renewed_members.html'
             'country',
             'renew date'
         ]
-    
+
         table_data = []
         for mem in members:
-    
+
             table_data.append([
                 mem.member_number,
                 mem.user.last_name,
@@ -2049,7 +2062,7 @@ def report_renewed_members(request, template_name='reports/renewed_members.html'
                 mem.user.profile.country,
                 mem.renew_dt
             ])
-    
+
         return render_csv(
             'renewed-members.csv',
             table_header,
@@ -2115,12 +2128,12 @@ def report_grace_period_members(request, template_name='reports/grace_period_mem
 def report_active_members_ytd(request, template_name='reports/active_members_ytd.html'):
     import datetime
     from datetime import timedelta
-    
+
     year = datetime.datetime.now().year
     years = [year, year-1, year-2, year-3, year-4]
     if request.GET.get('year'):
         year = int(request.GET.get('year'))
-    
+
     active_mems = MembershipDefault.objects.filter(status=True, status_detail="active")
 
     total_new = active_mems.filter(join_dt__year=year).count()
@@ -2153,14 +2166,14 @@ def report_active_members_ytd(request, template_name='reports/active_members_ytd
         months.append(month_dict)
 
     EventLog.objects.log()
-    
+
     return render_to_response(template_name, {'months': months, 'total_new': total_new, 'total_renew': total_renew, 'years': years, 'year': year}, context_instance=RequestContext(request))
 
 @staff_member_required
 def report_members_ytd_type(request, template_name='reports/members_ytd_type.html'):
     import datetime
     from datetime import timedelta
-    
+
     year = datetime.datetime.now().year
     years = [year, year-1, year-2, year-3, year-4]
     if request.GET.get('year'):
@@ -2195,7 +2208,7 @@ def report_members_ytd_type(request, template_name='reports/members_ytd_type.htm
                 'expired_mems': expired_mems,
             }
             types_expired.append(expired_dict)
-    
+
     totals_new = []
     totals_renew = []
     totals_expired = []
@@ -2209,8 +2222,8 @@ def report_members_ytd_type(request, template_name='reports/members_ytd_type.htm
         totals_new.append(new)
         totals_renew.append(renew)
         totals_expired.append(expired)
-        
+
 
     EventLog.objects.log()
-    
+
     return render_to_response(template_name, {'months': months, 'years': years, 'year': year, 'types_new': types_new, 'types_renew': types_renew, 'types_expired': types_expired, 'totals_new': totals_new, 'totals_renew': totals_renew, 'totals_expired': totals_expired}, context_instance=RequestContext(request))
